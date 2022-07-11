@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <script src="https://bitwiseshiftleft.github.io/sjcl/sjcl.js"></script>
+        <script src="http://bitwiseshiftleft.github.io/sjcl/sjcl.js"></script>
+        <title>TOTP</title>
+    </head>
+    <body>
+        <center>
+            <h1>TOTP-PC</h1>
+        </center>
+        <hr>
+        <div id="template" hidden>
+            <h1>$Label_Name <button onclick="removeCounter(this)">x</button></h1> 
+            <label id="code">$TOTP</label> | <label id="count">$Sec_Remaining</label> seconds
+            <hr>
+        </div>
+        <div id="codes">
+
+        </div>
+        <button onclick="hideCounter()" style="position: fixed; bottom: 0; right: 70px;">h</button>
+        <button onclick="importCounter()" style="position: fixed; bottom: 0; right: 50px;">i</button>
+        <button onclick="easterEgg()" style="position: fixed; bottom: 0; right: 50px;" hidden>d</button>
+        <button onclick="exportCounter()" style="position: fixed; bottom: 0; right: 25px;">e</button>
+        <button onclick="addCounter()" style="position: fixed; bottom: 0; right: 0;">+</button>
+        <script>
+            let hide = true;
+
+            function hideCounter() {
+                hide = !hide;
+            }
+            function exportCounter() {
+                let pwd = prompt("Enter backup password.", "password");
+                if (!pwd) return alert("Cannot create an unprotected backup.");
+                let storage = localStorage.getItem("codes") || "{}";
+                prompt("Copy the backup values from here to the other device.", aese(storage, pwd));
+            }
+            function importCounter() {
+                let newStorage = prompt("Copy the backup values from the other device to here.");
+                if (!newStorage) return alert("Invalid backup.");
+                try {
+                    JSON.parse(newStorage)
+                } catch {
+                    return alert("Invalid backup.");
+                }
+                let pwd = prompt("Enter backup password.", "password") || "password";
+                if (!pwd) return alert("Cannot import an unprotected backup.");
+                let attempt = {};
+                try {
+                    attempt = JSON.parse(aesd(newStorage, pwd));
+                } catch {
+                    return alert("Invalid backup.");
+                }
+                let confirmation = confirm("Valid backup\nHas " + Object.keys(attempt).length + " keys\nReady to use!\n\nConfirm to import the backup (all existing keys will be lost)");
+                if (!confirmation) return;
+                localStorage.setItem("codes", JSON.stringify(attempt));
+            }
+            function removeCounter(el) {
+                el.hidden = true;
+                if (confirm("Are you sure?\n\nThis will erase the token for " + el.parentElement.innerText + ", but will not disable any mfa enabled.\nIf you've got an mfa enabled, disable mfa before removal,\nor find a new method or receiving the mfa code.")) {
+                    let storage = JSON.parse(localStorage.getItem("codes") || "{}");
+                    delete storage[el.parentElement.innerText];
+                    localStorage.setItem("codes", JSON.stringify(storage));
+                    el.parentElement.remove();
+                } else {
+                    el.hidden = false;
+                }
+            }
+            function addCounter() {
+                alert("Please avoid misspells, or else the codes aren't going to render or are going to render improperly.");
+                let startTime = prompt("Enter the start timecode of the code");
+                if (!startTime) return alert("Cannot create a counter with no starttime.");
+                startTime = Number(startTime);
+                let frame = prompt("Enter the timeframe of codes (seconds)", "30");
+                if (!frame) return alert("Cannot create a counter with no frametime.")
+                frame = Number(frame);
+                let length = prompt("Enter the key length", "6");
+                if (!length) return alert("Cannot create a counter with no length.");
+                length = Number(length);
+                let secret = prompt("Enter the secret. (This option must be secret, please keep others away from your screen!)");
+                if (!secret) return alert("Cannot create a counter without a secret.");
+                let labelname = prompt("Select the label name (will be displayed as the title of the generator)", "My 2FA counter #" + Math.floor(Math.random() * 100));
+                if (!labelname) return alert("Cannot create a counter with no labelname.");
+                let storage = JSON.parse(localStorage.getItem("codes") || "{}");
+                if (storage.hasOwnProperty(labelname)) {
+                    if (!confirm("Overwrite existing key?")) {
+                        return;
+                    }
+                }
+                storage[labelname] = {
+                    startTime: startTime,
+                    length: length,
+                    secret: secret,
+                    frame: frame
+                }
+                localStorage.setItem("codes", JSON.stringify(storage));
+            }
+            setInterval(function() {
+                codes.innerHTML = "";
+                let storage = JSON.parse(localStorage.getItem("codes") || "{}");
+                for (let labelname in storage) {
+                    let c = Math.floor((Math.floor(Date.now() / 1000) - storage[labelname].startTime) / storage[labelname].frame);
+                    let dM = storage[labelname].length ** 10;
+                    let hash = sha256(storage[labelname].secret + c);
+                    hash = parseInt(hash, 16);
+                    hash = hash % dM;
+                    hash = hash.toString();
+                    hash = hash.split("", storage[labelname].length);
+                    hash = hash.join("");
+                    codes.innerHTML = codes.innerHTML + template.innerHTML.replace("$Label_Name", labelname).replace("$TOTP", (hide ? "Use H button to reveal" : hash)).replace("$Sec_Remaining", (storage[labelname].frame - ((Math.floor(Date.now() / 1000) - storage[labelname].startTime) % storage[labelname].frame)));
+                }
+            }, 1000)
+            function sha256(message) {
+                return sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(message));
+            }
+            function aese(message, pwd) {
+                return sjcl.encrypt(pwd, message, {iter: 1000}, {});
+            }
+            function aesd(message, pwd) {
+                return sjcl.decrypt(pwd, message);
+            }
+
+
+
+            function easterEgg() {
+                alert("You found it! Clearly, something must be pointing towards the word \"hide\".");
+                alert("Here, have a cool counter that the dev (discord PC#7105) uses to test eastereggers.");
+                let storage = JSON.parse(localStorage.getItem("codes") || "{}");
+                storage["easteregger"] = {
+                    startTime: Number(atob("MTY1NzQ4NjgwMA==")),
+                    length: 6,
+                    frame: 30
+                };
+                storage["easteregger"].secret = [+!+[]]+([][[]]+[])[!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]]+([][(!![]+[])[!+[]+!+[]+!+[]]+([][[]]+[])[+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([![]]+[][[]])[+!+[]+[+[]]]+(!![]+[])[!+[]+!+[]+!+[]]+(![]+[])[!+[]+!+[]+!+[]]]()+[])[!+[]+!+[]]+(![]+[])[+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]]+(![]+[])[+!+[]]+[+!+[]]+[!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]]+[+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]];
+                localStorage.setItem("codes", JSON.stringify(storage));
+            }
+        </script>
+    </body>
+</html>
