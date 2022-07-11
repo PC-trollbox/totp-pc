@@ -1,6 +1,6 @@
 # TOTP-PC
 
-I tried:tm:.
+I tried(tm).
 
 I tried doing it as in specification, but... failed.
 That will always happen when you don't read the docs enough.
