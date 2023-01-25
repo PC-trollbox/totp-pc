@@ -1,0 +1,18 @@
+{
+  "name": "totp-pc",
+  "version": "1.0.4",
+  "description": "Generate one-time-passwords using my method (almost as in specification)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["otp", "totp", "one-time-password", "2fa"],
+  "author": "pc-trollbox",
+  "license": "ISC",
+  "homepage": "https://github.com/PC-trollbox/totp-pc#readme",
+  "bugs": {
+    "url" : "https://github.com/PC-trollbox/totp-pc",
+    "email" : "pcowneremail@mail.ru"
+  },
+  "repository": "github:PC-trollbox/totp-pc"
+}
