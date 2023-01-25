@@ -1,6 +1,6 @@
 {
   "name": "totp-pc",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Generate one-time-passwords using my method (almost as in specification)",
   "main": "index.js",
   "scripts": {

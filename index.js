@@ -8,7 +8,11 @@ module.exports = {
      * @returns {String} A random string.
      */
     createNewSecret: function secret() {
-        return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(16); // Return a new secret based on Math.random() and max value interpreted.
+        let endToken = "";
+        while (endToken.length < 16) {
+            endToken = endToken + crypto.randomBytes(1).toString("hex");
+        }
+        return endToken.split("", 16).join(""); // Return a new secret based on cryptography random number generator.
     },
 
     /**
